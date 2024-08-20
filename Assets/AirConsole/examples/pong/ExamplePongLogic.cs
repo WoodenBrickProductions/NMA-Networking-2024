@@ -16,6 +16,14 @@ public class ExamplePongLogic : MonoBehaviour {
 	private int scoreRacketLeft = 0;
 	private int scoreRacketRight = 0;
 
+	float turnLeft = 0;
+	float turnRight = 0;
+	float[] turns = new float[0];
+	float[] base_angles = new float[0];
+
+	public GameObject paddlePrefab;
+	private Dictionary<int, GameObject> paddles = new Dictionary<int, GameObject>();
+
 	void Awake () {
 		AirConsole.instance.onMessage += OnMessage;
 		AirConsole.instance.onConnect += OnConnect;
@@ -33,7 +41,7 @@ public class ExamplePongLogic : MonoBehaviour {
 	/// <param name="device_id">The device_id that connected</param>
 	void OnConnect (int device_id) {
 		if (AirConsole.instance.GetActivePlayerDeviceIds.Count == 0) {
-			if (AirConsole.instance.GetControllerDeviceIds ().Count >= 2) {
+			if (AirConsole.instance.GetControllerDeviceIds ().Count >= 6) {
 				StartGame ();
 			} else {
 				uiText.text = "NEED MORE PLAYERS";
@@ -48,7 +56,7 @@ public class ExamplePongLogic : MonoBehaviour {
 	void OnDisconnect (int device_id) {
 		int active_player = AirConsole.instance.ConvertDeviceIdToPlayerNumber (device_id);
 		if (active_player != -1) {
-			if (AirConsole.instance.GetControllerDeviceIds ().Count >= 2) {
+			if (AirConsole.instance.GetControllerDeviceIds ().Count >= 6) {
 				StartGame ();
 			} else {
 				AirConsole.instance.SetActivePlayers (0);
@@ -66,17 +74,30 @@ public class ExamplePongLogic : MonoBehaviour {
 	void OnMessage (int device_id, JToken data) {
 		int active_player = AirConsole.instance.ConvertDeviceIdToPlayerNumber (device_id);
 		if (active_player != -1) {
+			turns[active_player] = 5 * (float)data["move"];
+			Debug.Log("We have smth");
 			if (active_player == 0) {
-				this.racketLeft.angularVelocity = 5 * (float)data ["move"];
+				turnLeft = 5 * (float)data ["move"];
 			}
 			if (active_player == 1) {
-				this.racketRight.angularVelocity = 5 * (float)data ["move"];
+				turnRight = 5 * (float)data ["move"];
 			}
 		}
 	}
 
 	void StartGame () {
-		AirConsole.instance.SetActivePlayers (2);
+		AirConsole.instance.SetActivePlayers (6);
+		turns = new float[6];
+		base_angles = new float[6];
+		for (int i = 0; i < 6; i++)
+        {
+			var paddle = Instantiate(paddlePrefab);
+			paddle.SetActive(true);
+			paddles.Add(i, paddle);
+			paddle.transform.rotation = Quaternion.Euler(0, 0, 360 / 6 * i);
+			base_angles[i] = paddle.transform.rotation.eulerAngles.z;
+
+		}			
 		ResetBall (true);
 		scoreRacketLeft = 0;
 		scoreRacketRight = 0;
@@ -100,6 +121,18 @@ public class ExamplePongLogic : MonoBehaviour {
 	void UpdateScoreUI () {
 		// update text canvas
 		uiText.text = scoreRacketLeft + ":" + scoreRacketRight;
+	}
+
+    private void Update()
+    {
+		for (int i = 0; i < turns.Length; i++)
+        {
+			var rotation = paddles[i].transform.rotation;
+			var euler = rotation.eulerAngles;
+			euler.z = Mathf.Clamp((euler.z + turns[i] * Time.deltaTime), (base_angles[i] - 180 / turns.Length + 5), (base_angles[i] + 180 / turns.Length - 5));
+			rotation.eulerAngles = euler;
+			paddles[i].transform.rotation = rotation;
+		}
 	}
 
 	void FixedUpdate () {

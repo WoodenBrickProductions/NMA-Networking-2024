@@ -14,6 +14,8 @@ public class Racket : MonoBehaviour {
 		if (col.gameObject.GetComponent<Rigidbody2D> () != null) {
 
 			float hitPos = (col.transform.position.y - transform.position.y) / (GetComponent<Collider2D> ().bounds.size.y / 2);
+			Vector3 hitPos2 = col.GetContact(0).point;
+			var hitDir2 = (hitPos2 - col.transform.GetChild(0).position).normalized;
 			float hitDir = 1f;
 
 			if (col.relativeVelocity.x > 0) {
@@ -21,7 +23,8 @@ public class Racket : MonoBehaviour {
 			}
 
 			Vector2 dir = new Vector2 (hitDir, hitPos).normalized;
-			col.gameObject.GetComponent<Rigidbody2D> ().velocity = dir * logic.ballSpeed;
+			Vector2 dir2 = new Vector2(hitDir2.x, hitDir2.y);
+			col.gameObject.GetComponent<Rigidbody2D> ().velocity = dir2 * logic.ballSpeed;
 
 		}
 	}
