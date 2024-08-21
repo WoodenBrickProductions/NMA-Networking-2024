@@ -4,10 +4,32 @@ using System.Collections;
 using System.Collections.Generic;
 using NDream.AirConsole;
 using Newtonsoft.Json.Linq;
+using System.IO;
 
 public class ExamplePongLogic : MonoBehaviour {
 
-	public Rigidbody2D racketLeft;
+	public static ExamplePongLogic instance;
+
+	const string smallCircle =
+		"0 0 1 1 1 1 1 0 0\n" +
+		"0 1 1 1 1 1 1 1 0\n" +
+		"1 1 1 1 1 1 1 1 1\n" +
+		"1 1 1 1 1 1 1 1 1\n" +
+		"1 1 1 1 1 1 1 1 1\n" +
+		"1 1 1 1 1 1 1 1 1\n" +
+		"1 1 1 1 1 1 1 1 1\n" +
+		"0 1 1 1 1 1 1 1 0\n" +
+		"0 0 1 1 1 1 1 0 0\n";
+
+    public void NewBall()
+    {
+		var newBall = Instantiate(ball);
+		var paddle = paddles[(Block.breakCount / newBallCount % 6)];
+		newBall.position = paddle.transform.GetChild(0).position - paddle.transform.right;
+		newBall.velocity = -paddle.transform.right * this.ballSpeed;
+    }
+
+    public Rigidbody2D racketLeft;
 	public Rigidbody2D racketRight;
 	public Rigidbody2D ball;
 	public float ballSpeed = 10f;
@@ -24,7 +46,11 @@ public class ExamplePongLogic : MonoBehaviour {
 	public GameObject paddlePrefab;
 	private Dictionary<int, GameObject> paddles = new Dictionary<int, GameObject>();
 
-	void Awake () {
+	public GameObject blockPrefab;
+    public int newBallCount = 20;
+
+    void Awake () {
+		instance = this;
 		AirConsole.instance.onMessage += OnMessage;
 		AirConsole.instance.onConnect += OnConnect;
 		AirConsole.instance.onDisconnect += OnDisconnect;
@@ -99,15 +125,16 @@ public class ExamplePongLogic : MonoBehaviour {
 
 		}			
 		ResetBall (true);
+		MakeBlocks();
 		scoreRacketLeft = 0;
 		scoreRacketRight = 0;
 		UpdateScoreUI ();
 	}
 
 	void ResetBall (bool move) {
-		
+
 		// place ball at center
-		this.ball.position = Vector3.zero;
+		this.ball.position = paddles[0].transform.GetChild(0).position - paddles[0].transform.right ;
 		
 		// push the ball in a random direction
 		if (move) {
@@ -117,6 +144,29 @@ public class ExamplePongLogic : MonoBehaviour {
 			this.ball.velocity = Vector3.zero;
 		}
 	}
+
+	void MakeBlocks()
+    {
+		using(var reader = new StringReader(smallCircle))
+        {
+			int dimension = 9;
+			float scale = 0.4f;
+			for(int i = 0; i < dimension; i++)
+            {
+				var line = reader.ReadLine();
+				var split = line.Split(" ");
+				for(int j = 0; j < split.Length; j++)
+                {
+					if (split[j] == "0")
+						continue;
+
+					var block = Instantiate(blockPrefab);
+					block.transform.position = new Vector2((i - (dimension / 2.0f - 0.5f)) * scale, (j - (dimension / 2.0f - 0.5f)) * scale);
+					block.SetActive(true);
+                }
+            }
+        }
+    }
 
 	void UpdateScoreUI () {
 		// update text canvas
