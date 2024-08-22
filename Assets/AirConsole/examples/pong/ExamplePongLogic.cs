@@ -21,7 +21,25 @@ public class ExamplePongLogic : MonoBehaviour {
 		"0 1 1 1 1 1 1 1 0\n" +
 		"0 0 1 1 1 1 1 0 0\n";
 
-    public void NewBall()
+	const string largeCircle =
+		"0 0 0 0 0 1 1 1 1 1 0 0 0 0 0\n" +
+		"0 0 0 1 1 1 1 1 1 1 1 1 0 0 0\n" +
+		"0 0 1 1 1 1 1 1 1 1 1 1 1 0 0\n" +
+		"0 1 1 1 1 1 1 1 1 1 1 1 1 1 0\n" +
+		"0 1 1 1 1 1 1 1 1 1 1 1 1 1 0\n" +
+		"1 1 1 1 1 1 1 1 1 1 1 1 1 1 1\n" +
+		"1 1 1 1 1 1 1 1 1 1 1 1 1 1 1\n" +
+		"1 1 1 1 1 1 1 1 1 1 1 1 1 1 1\n" +
+		"1 1 1 1 1 1 1 1 1 1 1 1 1 1 1\n" +
+		"1 1 1 1 1 1 1 1 1 1 1 1 1 1 1\n" +
+		"0 1 1 1 1 1 1 1 1 1 1 1 1 1 0\n" +
+		"0 1 1 1 1 1 1 1 1 1 1 1 1 1 0\n" +
+		"0 0 1 1 1 1 1 1 1 1 1 1 1 0 0\n" +
+		"0 0 0 1 1 1 1 1 1 1 1 1 0 0 0\n" +
+		"0 0 0 0 0 1 1 1 1 1 0 0 0 0 0\n";
+
+
+	public void NewBall()
     {
 		var newBall = Instantiate(ball);
 		var paddle = paddles[(Block.breakCount / newBallCount % 6)];
@@ -37,6 +55,7 @@ public class ExamplePongLogic : MonoBehaviour {
 #if !DISABLE_AIRCONSOLE 
 	private int scoreRacketLeft = 0;
 	private int scoreRacketRight = 0;
+	public int score = 0;
 
 	float turnLeft = 0;
 	float turnRight = 0;
@@ -147,10 +166,10 @@ public class ExamplePongLogic : MonoBehaviour {
 
 	void MakeBlocks()
     {
-		using(var reader = new StringReader(smallCircle))
+		using(var reader = new StringReader(largeCircle))
         {
-			int dimension = 9;
-			float scale = 0.4f;
+			int dimension = 15;
+			float scale = 0.3f;
 			for(int i = 0; i < dimension; i++)
             {
 				var line = reader.ReadLine();
@@ -168,9 +187,9 @@ public class ExamplePongLogic : MonoBehaviour {
         }
     }
 
-	void UpdateScoreUI () {
+	public void UpdateScoreUI () {
 		// update text canvas
-		uiText.text = scoreRacketLeft + ":" + scoreRacketRight;
+		uiText.text = "" + score;
 	}
 
     private void Update()
