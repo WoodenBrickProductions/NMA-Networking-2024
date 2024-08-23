@@ -25,12 +25,12 @@ public class Racket : MonoBehaviour {
 
 			if (col.otherCollider.GetComponent<Block>())
             {
-				logic.ballSpeed += 0.1f;
+				logic.baseBallSpeed += 0.01f;
             }
 
 			Vector2 dir = new Vector2 (hitDir, hitPos).normalized;
 			Vector2 dir2 = new Vector2(hitDir2.x, hitDir2.y);
-			col.gameObject.GetComponent<Rigidbody2D> ().velocity = dir2 * logic.ballSpeed;
+			col.gameObject.GetComponent<Rigidbody2D> ().velocity = dir2 * logic.baseBallSpeed;
 
 		}
 	}
