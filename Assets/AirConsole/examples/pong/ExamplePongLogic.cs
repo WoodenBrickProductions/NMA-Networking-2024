@@ -5,10 +5,12 @@ using System.Collections.Generic;
 using NDream.AirConsole;
 using Newtonsoft.Json.Linq;
 using System.IO;
+using System;
 
 public class ExamplePongLogic : MonoBehaviour {
 
 	public static ExamplePongLogic instance;
+	public Dictionary<int, ExamplePongLogic> playerLogics = new Dictionary<int, ExamplePongLogic>();
 
 	const string smallCircle =
 		"0 0 1 1 1 1 1 0 0\n" +
@@ -20,6 +22,82 @@ public class ExamplePongLogic : MonoBehaviour {
 		"1 1 1 1 1 1 1 1 1\n" +
 		"0 1 1 1 1 1 1 1 0\n" +
 		"0 0 1 1 1 1 1 0 0\n";
+
+    public int GetClientCount()
+    {
+		return clientCount;
+    }
+
+	public void SetClientCount(int data)
+	{
+		clientCount = data;
+	}
+
+    public int[] GetPlayerPaddleRotationDirections()
+    {
+		return playerPaddleRotationDirections;
+    }
+
+	public void SetPlayerPaddleRotationDirections(int[] rotations)
+	{
+		playerPaddleRotationDirections = rotations;
+	}
+
+	public int GetPlayerCount()
+    {
+		return playerCount;
+    }
+	
+	public void SetPlayerCount(int data)
+	{
+		playerCount = data;
+	}
+
+	public Vector2[] GetBallPositions()
+    {
+		return ballPositions;
+    }
+
+    public int GetBallCount()
+    {
+		return ballCount;
+    }
+
+	public void SetBallCount(int count)
+    {
+		ballCount = count;
+    }
+
+    public void SetBallPositions(Vector2[] positions, Vector2 offset)
+	{
+		for (int i = 0; i < ballCount; i++)
+		{
+			ballPositions[i] = positions[i] + offset;
+			var ball = balls[i];
+			ball.position = ballPositions[i];
+			ball.velocity = ballVelocities[i] * ballDirections[i];
+		}
+	}
+
+	public float[] GetPaddleAngles()
+    {
+		return playerPaddleAngles;
+    }
+
+	public void SetPaddleAngles(float[] angles)
+	{
+		playerPaddleAngles = angles;
+	}
+
+	public Vector2[] GetBallDirections()
+    {
+		return ballDirections;
+    }
+
+	public void SetBallDirections(Vector2[] directions)
+	{
+		ballDirections = directions;
+	}
 
 	const string largeCircle =
 		"0 0 0 0 0 1 1 1 1 1 0 0 0 0 0\n" +
@@ -38,42 +116,128 @@ public class ExamplePongLogic : MonoBehaviour {
 		"0 0 0 1 1 1 1 1 1 1 1 1 0 0 0\n" +
 		"0 0 0 0 0 1 1 1 1 1 0 0 0 0 0\n";
 
+    public bool[] GetBlocksActive()
+    {
+		return blocksActive;
+    }
+
+	public void SetBlocksActive(bool[] blocks)
+	{
+		blocksActive = blocks;
+	}
+
+	public ExamplePongLogic GetPlayerLogicInstance(int playerID)
+    {
+		if (this != instance)
+        {
+			Debug.LogError("Ši operacija negalima su klientu!");
+			return null;
+        }
+
+		if(!playerLogics.ContainsKey(playerID))
+        {
+			Debug.LogError("Paduotas neteisingas žaidėjo kodas: " + playerID);
+			return null;
+        }
+
+		return playerLogics[playerID];
+    }
+
+    public float GetScore()
+    {
+		return score;
+    }
+
+	public void SetScore(float score)
+	{
+		this.score = score;
+	}
+
+
+	public float[] GetBallVelocities()
+    {
+		return ballVelocities;
+    }
+
+	public void SetBallVelocities(float[] velocities)
+	{
+		ballVelocities = velocities;
+	}
 
 	public void NewBall()
     {
-		var newBall = Instantiate(ball);
-		var paddle = paddles[(Block.breakCount / newBallCount % 6)];
-		newBall.position = paddle.transform.GetChild(0).position - paddle.transform.right;
-		newBall.velocity = -paddle.transform.right * this.ballSpeed;
-    }
+		for (int i = 0; i < playerCount; i++)
+		{
+			var logic = playerLogics[i];
+			var newBall = Instantiate(ballPrefab);
+			newBall.transform.parent = logic.transform;
+			var paddle = logic.paddles[(Block.breakCount / newBallCount % 6)];
+			newBall.transform.position = paddle.transform.GetChild(0).position - paddle.transform.right;
+			newBall.velocity = -paddle.transform.right * logic.baseBallSpeed;
+			logic.balls.Add(newBall);
+			newBall.gameObject.SetActive(true);
 
-    public Rigidbody2D racketLeft;
-	public Rigidbody2D racketRight;
-	public Rigidbody2D ball;
-	public float ballSpeed = 10f;
+			logic.ballCount++;
+			Array.Resize(ref logic.ballDirections, ballCount);
+			Array.Resize(ref logic.ballPositions, ballCount);
+			Array.Resize(ref logic.ballVelocities, ballCount);
+
+			logic.ballPositions[ballCount - 1] = newBall.position;
+			logic.ballDirections[ballCount - 1] = newBall.velocity.normalized;
+			logic.ballVelocities[ballCount - 1] = newBall.velocity.magnitude;
+		}
+	}
+
 	public Text uiText;
-#if !DISABLE_AIRCONSOLE 
-	private int scoreRacketLeft = 0;
-	private int scoreRacketRight = 0;
-	public int score = 0;
+	
+	public float score;
+	int clientCount;
+	public int playerCount;
+	float[] playerPaddleAngles = new float[6];
+	int[] playerPaddleRotationDirections = new int[6];
+	int ballCount;
+	Vector2[] ballPositions = new Vector2[0];
+	Vector2[] ballDirections = new Vector2[0];
+	float[] ballVelocities = new float[0];
+	bool[] blocksActive;
 
-	float turnLeft = 0;
-	float turnRight = 0;
-	float[] turns = new float[0];
 	float[] base_angles = new float[0];
 
 	public GameObject paddlePrefab;
 	private Dictionary<int, GameObject> paddles = new Dictionary<int, GameObject>();
+	private List<Rigidbody2D> balls = new();
+
+	public float baseBallSpeed = 10;
 
 	public GameObject blockPrefab;
-    public int newBallCount = 20;
+	public Rigidbody2D ballPrefab;
+	public int newBallCount = 20;
 
     void Awake () {
+		if (instance != null)
+			return;
 		instance = this;
 		AirConsole.instance.onMessage += OnMessage;
 		AirConsole.instance.onConnect += OnConnect;
 		AirConsole.instance.onDisconnect += OnDisconnect;
 	}
+
+	void CreateInstances()
+    {
+		playerLogics[0] = this;
+		for(int i = 0; i < 5; i++)
+        {
+			var logic = Instantiate(gameObject).GetComponent<ExamplePongLogic>();
+			var walls = logic.GetComponentsInChildren<Wall>(true);
+			foreach (var wall in walls)
+            {
+				wall.disabled = true;
+            }
+			logic.transform.position = new Vector3(((i + 1) % 3) * 30, -20 * (int) ((i + 1) / 3), 0);
+			playerLogics.Add(i + 1, logic);
+			logic.StartGame(true);
+        }
+    }
 
 	/// <summary>
 	/// We start the game if 2 players are connected and the game is not already running (activePlayers == null).
@@ -87,7 +251,7 @@ public class ExamplePongLogic : MonoBehaviour {
 	void OnConnect (int device_id) {
 		if (AirConsole.instance.GetActivePlayerDeviceIds.Count == 0) {
 			if (AirConsole.instance.GetControllerDeviceIds ().Count >= 6) {
-				StartGame ();
+				StartGame (false);
 			} else {
 				uiText.text = "NEED MORE PLAYERS";
 			}
@@ -102,7 +266,7 @@ public class ExamplePongLogic : MonoBehaviour {
 		int active_player = AirConsole.instance.ConvertDeviceIdToPlayerNumber (device_id);
 		if (active_player != -1) {
 			if (AirConsole.instance.GetControllerDeviceIds ().Count >= 6) {
-				StartGame ();
+				StartGame (false);
 			} else {
 				AirConsole.instance.SetActivePlayers (0);
 				ResetBall (false);
@@ -119,52 +283,66 @@ public class ExamplePongLogic : MonoBehaviour {
 	void OnMessage (int device_id, JToken data) {
 		int active_player = AirConsole.instance.ConvertDeviceIdToPlayerNumber (device_id);
 		if (active_player != -1) {
-			turns[active_player] = 5 * (float)data["move"];
-			Debug.Log("We have smth");
-			if (active_player == 0) {
-				turnLeft = 5 * (float)data ["move"];
-			}
-			if (active_player == 1) {
-				turnRight = 5 * (float)data ["move"];
-			}
+			playerPaddleRotationDirections[active_player] = (int)data["move"];
 		}
 	}
 
-	void StartGame () {
-		AirConsole.instance.SetActivePlayers (6);
-		turns = new float[6];
+	void StartGame (bool client) {
+		playerCount = 6;
+		clientCount = 6;
+		if(!client)
+        {
+			AirConsole.instance.SetActivePlayers (6);
+			CreateInstances();
+        }
 		base_angles = new float[6];
 		for (int i = 0; i < 6; i++)
         {
 			var paddle = Instantiate(paddlePrefab);
+			paddle.transform.GetChild(0).GetComponent<Racket>().logic = this;
 			paddle.SetActive(true);
 			paddles.Add(i, paddle);
+			paddle.transform.parent = this.transform;
+			paddle.transform.localPosition = Vector3.zero;
 			paddle.transform.rotation = Quaternion.Euler(0, 0, 360 / 6 * i);
 			base_angles[i] = paddle.transform.rotation.eulerAngles.z;
 
-		}			
-		ResetBall (true);
-		MakeBlocks();
-		scoreRacketLeft = 0;
-		scoreRacketRight = 0;
-		UpdateScoreUI ();
+		}
+		if(!client)
+        {
+			NewBall();
+			ResetBall (true);
+			UpdateScoreUI ();
+        }
+		MakeBlocks(this);
 	}
 
 	void ResetBall (bool move) {
-
-		// place ball at center
-		this.ball.position = paddles[0].transform.GetChild(0).position - paddles[0].transform.right ;
 		
-		// push the ball in a random direction
-		if (move) {
-			Vector3 startDir = new Vector3 (Random.Range (-1, 1f), Random.Range (-0.1f, 0.1f), 0);
-			this.ball.velocity = startDir.normalized * this.ballSpeed;
-		} else {
-			this.ball.velocity = Vector3.zero;
-		}
+		for(int i = 0; i < ballCount; i++)
+        {
+			var ball = balls[i];
+			var paddle = paddles[i % 6];
+			ball.position = paddle.transform.GetChild(i % 6).position - paddle.transform.right;
+			
+			if(move)
+            {
+				ball.velocity = -paddle.transform.right * this.baseBallSpeed;
+            }
+			else
+            {
+				ball.velocity = Vector3.zero;
+			}
+
+			ballPositions[ballCount - 1] = ball.position;
+			ballDirections[ballCount - 1] = ball.velocity.normalized;
+			ballVelocities[ballCount - 1] = ball.velocity.magnitude;
+
+        }
+
 	}
 
-	void MakeBlocks()
+	void MakeBlocks(ExamplePongLogic logic)
     {
 		using(var reader = new StringReader(largeCircle))
         {
@@ -180,7 +358,9 @@ public class ExamplePongLogic : MonoBehaviour {
 						continue;
 
 					var block = Instantiate(blockPrefab);
-					block.transform.position = new Vector2((i - (dimension / 2.0f - 0.5f)) * scale, (j - (dimension / 2.0f - 0.5f)) * scale);
+					block.transform.parent = logic.transform;
+					block.transform.localPosition = new Vector2((i - (dimension / 2.0f - 0.5f)) * scale, (j - (dimension / 2.0f - 0.5f)) * scale);
+					block.GetComponent<Block>().disabled = logic != ExamplePongLogic.instance;
 					block.SetActive(true);
                 }
             }
@@ -194,30 +374,25 @@ public class ExamplePongLogic : MonoBehaviour {
 
     private void Update()
     {
-		for (int i = 0; i < turns.Length; i++)
+		for (int i = 0; i < playerCount; i++)
         {
 			var rotation = paddles[i].transform.rotation;
 			var euler = rotation.eulerAngles;
-			euler.z = Mathf.Clamp((euler.z + turns[i] * Time.deltaTime), (base_angles[i] - 180 / turns.Length + 5), (base_angles[i] + 180 / turns.Length - 5));
+			euler.z = Mathf.Clamp((euler.z + playerPaddleRotationDirections[i] * 5 * Time.deltaTime), (base_angles[i] - 180 / playerCount + 5), (base_angles[i] + 180 / playerCount - 5));
 			rotation.eulerAngles = euler;
 			paddles[i].transform.rotation = rotation;
 		}
+
+		for(int i = 0; i < ballCount; i++)
+        {
+			var ball = balls[i];
+			ballPositions[i] = ball.position;
+			ballDirections[i] = ball.velocity.normalized;
+			ballVelocities[i] = ball.velocity.magnitude;
+        }
 	}
 
 	void FixedUpdate () {
-
-		// check if ball reached one of the ends
-		if (this.ball.position.x < -9f) {
-			scoreRacketRight++;
-			UpdateScoreUI ();
-			ResetBall (true);
-		}
-
-		if (this.ball.position.x > 9f) {
-			scoreRacketLeft++;
-			UpdateScoreUI ();
-			ResetBall (true);
-		}
 	}
 
 	void OnDestroy () {
@@ -227,5 +402,4 @@ public class ExamplePongLogic : MonoBehaviour {
 			AirConsole.instance.onMessage -= OnMessage;
 		}
 	}
-#endif
 }
