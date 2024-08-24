@@ -5,7 +5,7 @@ using UnityEngine;
 public class Task1_Replication : MonoBehaviour
 {
     const bool task1_enabled = true; // įjungta pirmoji užduotis: Replikavimas
-    const bool task2_enabled = true; // įjungta antroji užduotis: Nuspėjimai
+    const bool task2_enabled = false; // įjungta antroji užduotis: Nuspėjimai
     const bool task3_enabled = false; // įjungta pirmoji užduotis: Migracija
     const float ping_delay = 2; // Duomenų vėlinimas sekundėmis
 
@@ -48,31 +48,20 @@ public class Task1_Replication : MonoBehaviour
 
         //  -------- 1-os Užduoties pradžia -------------
 
-        for(int i = 1; i < 6; i++)
-        {
-            int Player = i;
-            Replicate(Player, BALL_POSITIONS, ballPositions); // DELETE
-            Replicate(Player, PLAYER_PADDLE_ANGLES, playerPaddleAngles); // DELETE
-            Replicate(Player, BALL_DIRECTIONS, ballDirections); // DELETE
-            Replicate(Player, BALL_VELOCITIES, ballVelocities); // DELETE
-            Replicate(Player, BLOCKS_ACTIVE, blocksActive); // DELETE
-            Replicate(Player, SCORE, score); // DELETE
-            Replicate(Player, BALL_DIRECTIONS, ballDirections); // DELETE
-            Replicate(Player, BALL_COUNT, ballCount); // DELETE
-            Replicate(Player, CLIENT_COUNT, clientCount); // DELETE
-            Replicate(Player, PLAYER_COUNT, playerCount); // DELETE
-            Replicate(Player, PLAYER_PADDLE_ROTATION_DIRECTIONS, playerPaddleRotationDirections); // DELETE
-        }
+        int Player2 = 1; // Antras žaidėjas
+        int firstBall = 0; // Pirmas kamuoliukas
+        Replicate(Player2, PLAYER_PADDLE_ANGLES, playerPaddleAngles); // Replikuoti antro žaidėjo visų žaidėjų platformas
+        Replicate(Player2, BALL_POSITIONS, ballPositions, firstBall); // Replikuoti antro žaidėjo pirmo kamuoliuko poziciją
 
         // ---------- 1-os Užduoties pabaiga ------------
 
 
-        
+
         // ---------- 3-os Užduoties pradžia ------------
-        
 
 
-        
+
+
         // ---------- 3-os Užduoties pabaiga ------------
 
     }
@@ -123,15 +112,17 @@ public class Task1_Replication : MonoBehaviour
 
         // Laikas nuo paskutinio replikavimo iš host
         float timeSinceLastReplication = delta;
+
+        // Testavimui
         blocksActive[test++] = false;
         blocksActive[test / 2] = true;
         test = test % blocksActive.Length;
         Simulate(playerID, BLOCKS_ACTIVE, blocksActive);
+        // Testavimui
 
         // ---------- 2-os Užduoties pabaiga ------------
     }
 
-    static int test = 0;
 
 
 
@@ -142,6 +133,7 @@ public class Task1_Replication : MonoBehaviour
     //---------------- IGNORUOTI --- IGNORE -------------------
     //---------------------------------------------------------
 
+    static int test = 0;
     static float time = 0;
 
     private void Update()
@@ -233,6 +225,55 @@ public class Task1_Replication : MonoBehaviour
             case PLAYER_PADDLE_ROTATION_DIRECTIONS:
                 logic.SetPlayerPaddleRotationDirections((int[])data);
                 replicationDataCount += ((int[])data).Length;
+                break;
+        }
+    }
+
+    public void Replicate(int playerID, int dataID, System.Object data, int index)
+    {
+        ExamplePongLogic logic = ExamplePongLogic.instance.GetPlayerLogicInstance(playerID);
+
+        switch (dataID)
+        {
+            case CLIENT_COUNT:
+                logic.SetClientCount((int)data);
+                replicationDataCount += 1;
+                break;
+            case PLAYER_COUNT:
+                logic.SetPlayerCount((int)data);
+                replicationDataCount += 1;
+                break;
+            case PLAYER_PADDLE_ANGLES:
+                logic.SetPaddleAngle(index, (float[])data);
+                replicationDataCount += 1;
+                break;
+            case BALL_COUNT:
+                logic.SetBallCount((int)data);
+                replicationDataCount += 1;
+                break;
+            case BALL_POSITIONS:
+                logic.SetBallPosition(index, (Vector2[])data, new Vector3(((playerID) % 3) * 30, -20 * (int)((playerID) / 3), 0));
+                replicationDataCount += 1;
+                break;
+            case BALL_DIRECTIONS:
+                logic.SetBallDirection(index, (Vector2[])data);
+                replicationDataCount += 1;
+                break;
+            case BALL_VELOCITIES:
+                logic.SetBallVelocity(index, (float[])data);
+                replicationDataCount += 1;
+                break;
+            case BLOCKS_ACTIVE:
+                logic.SetBlockActive(index, (bool[])data);
+                replicationDataCount += 1;
+                break;
+            case SCORE:
+                logic.SetScore((float)data);
+                replicationDataCount += 1;
+                break;
+            case PLAYER_PADDLE_ROTATION_DIRECTIONS:
+                logic.SetPlayerPaddleRotationDirection(index, (int[])data);
+                replicationDataCount += 1;
                 break;
         }
     }

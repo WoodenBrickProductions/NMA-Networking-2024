@@ -40,7 +40,15 @@ public class ExamplePongLogic : MonoBehaviour {
 
 	public void SetPlayerPaddleRotationDirections(int[] rotations)
 	{
-		playerPaddleRotationDirections = rotations;
+		for(int i = 0; i < playerCount; i++)
+        {
+			SetPlayerPaddleRotationDirection(i, rotations);
+        }
+	}
+
+	public void SetPlayerPaddleRotationDirection(int index, int[] rotations)
+	{
+		playerPaddleRotationDirections[index] = rotations[index];
 	}
 
 	public int GetPlayerCount()
