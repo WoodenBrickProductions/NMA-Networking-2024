@@ -114,10 +114,10 @@ public class Task1_Replication : MonoBehaviour
         float timeSinceLastReplication = delta;
 
         // Testavimui
-        blocksActive[test++] = false;
-        blocksActive[test / 2] = true;
-        test = test % blocksActive.Length;
-        Simulate(playerID, BLOCKS_ACTIVE, blocksActive);
+        //blocksActive[test++] = false;
+        //blocksActive[test / 2] = true;
+        //test = test % blocksActive.Length;
+        //Simulate(playerID, BLOCKS_ACTIVE, blocksActive);
         // Testavimui
 
         // ---------- 2-os Užduoties pabaiga ------------
@@ -177,7 +177,18 @@ public class Task1_Replication : MonoBehaviour
             return;
         }
 
-        Replicate(playerID, dataID, data);
+        switch (dataID)
+        {
+            case BALL_POSITIONS:
+                ExamplePongLogic logic = ExamplePongLogic.instance.GetPlayerLogicInstance(playerID);
+                logic.SetBallPositions((Vector2[])data, Vector3.zero);
+                replicationDataCount += ((Vector2[])data).Length;
+                break;
+
+            default:
+                Replicate(playerID, dataID, data);
+                break;
+        }
     }
 
     public void Replicate(int playerID, int dataID, System.Object data)
