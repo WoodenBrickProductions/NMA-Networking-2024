@@ -72,11 +72,16 @@ public class ExamplePongLogic : MonoBehaviour {
 	{
 		for (int i = 0; i < ballCount; i++)
 		{
-			ballPositions[i] = positions[i] + offset;
-			var ball = balls[i];
-			ball.position = ballPositions[i];
-			ball.velocity = ballVelocities[i] * ballDirections[i];
+			SetBallPosition(i, positions, offset);
 		}
+	}
+
+	public void SetBallPosition(int index, Vector2[] positions, Vector2 offset)
+    {
+		ballPositions[index] = positions[index] + offset;
+		var ball = balls[index];
+		ball.position = ballPositions[index];
+
 	}
 
 	public float[] GetPaddleAngles()
@@ -89,6 +94,12 @@ public class ExamplePongLogic : MonoBehaviour {
 		playerPaddleAngles = angles;
 	}
 
+	public void SetPaddleAngle(int index, float[] angles)
+    {
+		playerPaddleAngles[index] = angles[index];
+
+	}
+
 	public Vector2[] GetBallDirections()
     {
 		return ballDirections;
@@ -96,7 +107,17 @@ public class ExamplePongLogic : MonoBehaviour {
 
 	public void SetBallDirections(Vector2[] directions)
 	{
-		ballDirections = directions;
+		for(int i = 0; i < ballDirections.Length; i++)
+        {
+			SetBallDirection(i, directions);
+        }
+	}
+
+	public void SetBallDirection(int index, Vector2[] directions)
+    {
+		ballDirections[index] = directions[index];
+		balls[index].velocity = directions[index] * balls[index].velocity.magnitude;
+
 	}
 
 	const string largeCircle =
@@ -123,7 +144,18 @@ public class ExamplePongLogic : MonoBehaviour {
 
 	public void SetBlocksActive(bool[] blocks)
 	{
-		blocksActive = blocks;
+		for(int i = 0; i < blocks.Length; i++)
+        {
+			SetBlockActive(i, blocks);
+		}
+	}
+
+	public void SetBlockActive(int index, bool[] blocks)
+	{
+		blocksActive[index] = blocks[index];
+		var block = this.blocks[index];
+		block.enabled = blocks[index];
+		block.gameObject.SetActive(blocks[index]);
 	}
 
 	public ExamplePongLogic GetPlayerLogicInstance(int playerID)
@@ -159,9 +191,18 @@ public class ExamplePongLogic : MonoBehaviour {
 		return ballVelocities;
     }
 
+	public void SetBallVelocity(int index, float[] velocities)
+	{
+		ballVelocities[index] = velocities[index];
+		balls[index].velocity = velocities[index] * balls[index].velocity.normalized;
+	}
+
 	public void SetBallVelocities(float[] velocities)
 	{
-		ballVelocities = velocities;
+		for (int i = 0; i < velocities.Length; i++)
+        {
+			SetBallVelocity(i, velocities);
+        }
 	}
 
 	public void NewBall()
@@ -199,7 +240,7 @@ public class ExamplePongLogic : MonoBehaviour {
 	Vector2[] ballPositions = new Vector2[0];
 	Vector2[] ballDirections = new Vector2[0];
 	float[] ballVelocities = new float[0];
-	bool[] blocksActive;
+	public bool[] blocksActive;
 
 	float[] base_angles = new float[0];
 
@@ -348,6 +389,9 @@ public class ExamplePongLogic : MonoBehaviour {
         {
 			int dimension = 15;
 			float scale = 0.3f;
+
+			int counter = 0;
+
 			for(int i = 0; i < dimension; i++)
             {
 				var line = reader.ReadLine();
@@ -358,14 +402,26 @@ public class ExamplePongLogic : MonoBehaviour {
 						continue;
 
 					var block = Instantiate(blockPrefab);
+					var blockScript = block.GetComponent<Block>();
+
+					blockScript.id = counter++;
+					blocks.Add(blockScript);
+
 					block.transform.parent = logic.transform;
 					block.transform.localPosition = new Vector2((i - (dimension / 2.0f - 0.5f)) * scale, (j - (dimension / 2.0f - 0.5f)) * scale);
 					block.GetComponent<Block>().disabled = logic != ExamplePongLogic.instance;
 					block.SetActive(true);
                 }
             }
+			Array.Resize(ref blocksActive, blocks.Count);
+			for(int i = 0; i < blocks.Count; i++)
+            {
+				blocksActive[i] = true;
+            }
         }
     }
+
+	public List<Block> blocks = new List<Block>();
 
 	public void UpdateScoreUI () {
 		// update text canvas

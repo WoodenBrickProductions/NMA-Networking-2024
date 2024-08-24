@@ -6,12 +6,12 @@ public class Block : MonoBehaviour
 {
     public static int breakCount = 0;
     public bool disabled = false;
+    public int id = -1;
 
     private void OnCollisionEnter2D(Collision2D collision)
     {
         if (disabled)
         {
-            Destroy(gameObject);
             return;
         }
 
@@ -22,7 +22,9 @@ public class Block : MonoBehaviour
         {
             ExamplePongLogic.instance.NewBall();
         }
-        Destroy(gameObject);
-        
+
+        ExamplePongLogic.instance.blocksActive[id] = false;
+        enabled = false;
+        gameObject.SetActive(false);
     }
 }
