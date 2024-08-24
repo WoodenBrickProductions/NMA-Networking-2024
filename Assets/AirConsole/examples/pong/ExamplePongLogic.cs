@@ -91,7 +91,10 @@ public class ExamplePongLogic : MonoBehaviour {
 
 	public void SetPaddleAngles(float[] angles)
 	{
-		playerPaddleAngles = angles;
+		for(int i = 0; i < playerCount; i++)
+        {
+			SetPaddleAngle(i, angles);
+        }
 	}
 
 	public void SetPaddleAngle(int index, float[] angles)
@@ -175,6 +178,11 @@ public class ExamplePongLogic : MonoBehaviour {
 		return playerLogics[playerID];
     }
 
+	public void SetHostInstance(int playerID)
+    {
+		instance = playerLogics[playerID];
+    }
+
     public float GetScore()
     {
 		return score;
@@ -212,11 +220,13 @@ public class ExamplePongLogic : MonoBehaviour {
 			var logic = playerLogics[i];
 			var newBall = Instantiate(ballPrefab);
 			newBall.transform.parent = logic.transform;
-			var paddle = logic.paddles[(Block.breakCount / newBallCount % 6)];
+			var paddle = logic.paddles[(Block.breakCount / newBallCount % playerCount)];
 			newBall.transform.position = paddle.transform.GetChild(0).position - paddle.transform.right;
 			newBall.velocity = -paddle.transform.right * logic.baseBallSpeed;
 			logic.balls.Add(newBall);
 			newBall.gameObject.SetActive(true);
+
+
 
 			logic.ballCount++;
 			Array.Resize(ref logic.ballDirections, ballCount);
@@ -227,6 +237,18 @@ public class ExamplePongLogic : MonoBehaviour {
 			logic.ballDirections[ballCount - 1] = newBall.velocity.normalized;
 			logic.ballVelocities[ballCount - 1] = newBall.velocity.magnitude;
 		}
+
+		{
+			int i = 5;
+			var logic = playerLogics[i];
+			var newBall = Instantiate(ballPrefab);
+			newBall.transform.parent = logic.transform;
+			var paddle = logic.paddles[(Block.breakCount / newBallCount % playerCount)];
+			newBall.transform.position = paddle.transform.GetChild(0).position - paddle.transform.right;
+			newBall.velocity = -paddle.transform.right * logic.baseBallSpeed;
+			logic.cheatBalls.Add(newBall);
+			newBall.gameObject.SetActive(true);
+		}
 	}
 
 	public Text uiText;
@@ -234,8 +256,8 @@ public class ExamplePongLogic : MonoBehaviour {
 	public float score;
 	int clientCount;
 	public int playerCount;
-	float[] playerPaddleAngles = new float[6];
-	int[] playerPaddleRotationDirections = new int[6];
+	float[] playerPaddleAngles = new float[0];
+	int[] playerPaddleRotationDirections = new int[0];
 	int ballCount;
 	Vector2[] ballPositions = new Vector2[0];
 	Vector2[] ballDirections = new Vector2[0];
@@ -247,6 +269,7 @@ public class ExamplePongLogic : MonoBehaviour {
 	public GameObject paddlePrefab;
 	private Dictionary<int, GameObject> paddles = new Dictionary<int, GameObject>();
 	private List<Rigidbody2D> balls = new();
+	private List<Rigidbody2D> cheatBalls = new();
 
 	public float baseBallSpeed = 10;
 
@@ -337,6 +360,9 @@ public class ExamplePongLogic : MonoBehaviour {
 			CreateInstances();
         }
 		base_angles = new float[6];
+		playerPaddleAngles = new float[6];
+		playerPaddleRotationDirections = new int[6];
+
 		for (int i = 0; i < 6; i++)
         {
 			var paddle = Instantiate(paddlePrefab);

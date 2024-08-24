@@ -9,7 +9,7 @@ public class Task1_Replication : MonoBehaviour
     const bool task3_enabled = false; // įjungta pirmoji užduotis: Migracija
     const float ping_delay = 2; // Duomenų vėlinimas sekundėmis
 
-    public void Replikavimas(float delta)
+    public void Replikavimas()
     {
         /////////////
         /// DUOTA
@@ -66,14 +66,7 @@ public class Task1_Replication : MonoBehaviour
 
         // ---------- 1-os Užduoties pabaiga ------------
 
-        // ---------- 2-os Užduoties pradžia ------------
 
-
-        // Laikas nuo paskutinio replikavimo iš host
-        float timeSinceLastReplication = delta;
-        
-        
-        // ---------- 2-os Užduoties pabaiga ------------
         
         // ---------- 3-os Užduoties pradžia ------------
         
@@ -85,9 +78,60 @@ public class Task1_Replication : MonoBehaviour
     }
 
 
+    public void Nuspejimai(int id, ExamplePongLogic logic, float delta)
+    {
+        /////////////
+        /// DUOTA
+        /////////////
+
+        // Žaidėjo, kuris atlieka nuspėjimus ID
+        int playerID = id; 
+
+        // Žaidėjų, prisijungusių prie sistemos kiekis
+        int clientCount = logic.GetClientCount();
+
+        // Žaidėjų kiekis (įskaičiuoja tik žaidžiančius žaidėjus)
+        int playerCount = logic.GetPlayerCount();
+
+        // Kampas tarp žaidėjų platformų ir teigiamos X ašies laipsniais
+        // (Laipsnių didinimas suka platformą prieš laikrodžio rodyklę)
+        float[] playerPaddleAngles = logic.GetPaddleAngles();
+
+        // Žaidėjų platformų sukimosi kryptys
+        int[] playerPaddleRotationDirections = logic.GetPlayerPaddleRotationDirections();
+
+        // Kamuoliukų kiekis
+        int ballCount = logic.GetBallCount();
+
+        // Kamuoliukų pozicijos
+        Vector2[] ballPositions = logic.GetBallPositions();
+
+        // Kamuoliukų judėjimo kryptys
+        Vector2[] ballDirections = logic.GetBallDirections();
+
+        // Kamuoliukų greičiai
+        float[] ballVelocities = logic.GetBallVelocities();
+
+        // Aktyvūs blokai
+        bool[] blocksActive = logic.GetBlocksActive();
 
 
+        // ---------- 2-os Užduoties pradžia ------------
 
+        // Pastaba: šioje užduotyje negalima naudoti funkcijos: Replicate()
+        
+
+        // Laikas nuo paskutinio replikavimo iš host
+        float timeSinceLastReplication = delta;
+        blocksActive[test++] = false;
+        blocksActive[test / 2] = true;
+        test = test % blocksActive.Length;
+        Simulate(playerID, BLOCKS_ACTIVE, blocksActive);
+
+        // ---------- 2-os Užduoties pabaiga ------------
+    }
+
+    static int test = 0;
 
 
 
@@ -102,17 +146,23 @@ public class Task1_Replication : MonoBehaviour
 
     private void Update()
     {
-        time += Time.deltaTime;
-
         if (ExamplePongLogic.instance.playerCount < 6)
             return;
+
+        time += Time.deltaTime;
+
+        for(int i = 1; i < 6; i++)
+        {
+            currentPlayerID = i;
+            Nuspejimai(currentPlayerID, ExamplePongLogic.instance.GetPlayerLogicInstance(currentPlayerID), time);
+        }
 
         if(task2_enabled && time < ping_delay)
         {
             return;
         }
 
-        Replikavimas(time);
+        Replikavimas();
         time = 0;
         LogReplications();
     }
@@ -123,6 +173,19 @@ public class Task1_Replication : MonoBehaviour
     {
         Debug.Log("Data amount replicated: " + replicationDataCount);
         replicationDataCount = 0;
+    }
+
+    static int currentPlayerID = 0;
+
+    public void Simulate(int playerID, int dataID, System.Object data)
+    {
+        if(playerID != currentPlayerID)
+        {
+            Debug.LogError("Bandoma simuliuoti neteisingą žaidėją su ID: " + playerID + " kai šiuometinis žaidėjas: " + currentPlayerID);
+            return;
+        }
+
+        Replicate(playerID, dataID, data);
     }
 
     public void Replicate(int playerID, int dataID, System.Object data)
