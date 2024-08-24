@@ -4,15 +4,17 @@ using UnityEngine;
 
 public class Task1_Replication : MonoBehaviour
 {
-    private void Update()
+    const bool task1_enabled = true; // įjungta pirmoji užduotis: Replikavimas
+    const bool task2_enabled = true; // įjungta antroji užduotis: Nuspėjimai
+    const bool task3_enabled = false; // įjungta pirmoji užduotis: Migracija
+    const float ping_delay = 2; // Duomenų vėlinimas sekundėmis
+
+    public void Replikavimas(float delta)
     {
-        if (ExamplePongLogic.instance.playerCount < 6)
-            return;
-        Replikavimas();
-        LogReplications();
-    }
-    public void Replikavimas()
-    {
+        /////////////
+        /// DUOTA
+        /////////////
+
         // Žaidėjų, prisijungusių prie sistemos kiekis
         int clientCount = ExamplePongLogic.instance.GetClientCount();
 
@@ -44,7 +46,7 @@ public class Task1_Replication : MonoBehaviour
         float score = ExamplePongLogic.instance.GetScore();
 
 
-        // Užduoties pradžia
+        //  -------- 1-os Užduoties pradžia -------------
 
         for(int i = 1; i < 6; i++)
         {
@@ -62,8 +64,24 @@ public class Task1_Replication : MonoBehaviour
             Replicate(Player, PLAYER_PADDLE_ROTATION_DIRECTIONS, playerPaddleRotationDirections); // DELETE
         }
 
+        // ---------- 1-os Užduoties pabaiga ------------
 
-        // Užduoties pabaiga
+        // ---------- 2-os Užduoties pradžia ------------
+
+
+        // Laikas nuo paskutinio replikavimo iš host
+        float timeSinceLastReplication = delta;
+        
+        
+        // ---------- 2-os Užduoties pabaiga ------------
+        
+        // ---------- 3-os Užduoties pradžia ------------
+        
+
+
+        
+        // ---------- 3-os Užduoties pabaiga ------------
+
     }
 
 
@@ -79,6 +97,25 @@ public class Task1_Replication : MonoBehaviour
 
     //---------------- IGNORUOTI --- IGNORE -------------------
     //---------------------------------------------------------
+
+    static float time = 0;
+
+    private void Update()
+    {
+        time += Time.deltaTime;
+
+        if (ExamplePongLogic.instance.playerCount < 6)
+            return;
+
+        if(task2_enabled && time < ping_delay)
+        {
+            return;
+        }
+
+        Replikavimas(time);
+        time = 0;
+        LogReplications();
+    }
 
     public static int replicationDataCount = 0;
 
